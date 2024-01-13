@@ -39,25 +39,32 @@ namespace GenerationalApp
                             if (pageResult.Formats.TryGetValue("text/plain; charset=utf-8", out var bookUrl) &&
                                 bookUrl.EndsWith(".txt"))
                             {
-                                var result = await client.GetStringAsync(bookUrl);
-                                var words = result.Split(new[] { ' ', '\r', '\n' },
-                                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                                foreach (var word in words)
+                                try
                                 {
-                                    if (TryNormalize(word, out var newWord))
+                                    var result = await client.GetStringAsync(bookUrl);
+                                    var words = result.Split(new[] { ' ', '\r', '\n' },
+                                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                                    foreach (var word in words)
                                     {
-                                        var newValue = 0;
-                                        if (stringTrie.TryGetItem(newWord, out var counter))
-                                            newValue = ++counter;
-                                        stringTrie.Add(newWord, newValue);
+                                        if (TryNormalize(word, out var newWord))
+                                        {
+                                            var newValue = 0;
+                                            if (stringTrie.TryGetItem(newWord, out var counter))
+                                                newValue = ++counter;
+                                            stringTrie.Add(newWord, newValue);
+                                        }
                                     }
+
+                                    index++;
+                                    mainTask.Value = index;
+                                    pageTask.Value++;
+                                    AnsiConsole.MarkupLine(
+                                        $"After parsing '{pageResult.Title}' trie size is {stringTrie.EnumerateNodes().Count()}");
                                 }
-                                
-                                index++;
-                                mainTask.Value = index;
-                                pageTask.Value++;
-                                AnsiConsole.MarkupLine(
-                                    $"After parsing '{pageResult.Title}' trie size is {stringTrie.EnumerateNodes().Count()}");
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex.Message);
+                                }
                             }
                         }
                         if (page.Next is null)

@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\WebWorkerApp\bin\Release\net5.0\plugins\test</OutputPath>
+    <OutputPath>..\WebWorkerApp\bin\Release\net8.0\plugins\test</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\WebWorkerApp\bin\Debug\net5.0\plugins\test</OutputPath>
+    <OutputPath>..\WebWorkerApp\bin\Debug\net8.0\plugins\test</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

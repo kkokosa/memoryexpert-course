@@ -15,13 +15,13 @@ namespace WebWorkerApp
         {
             var job = new SampleJob();
 
-            foreach (var command in LoadPluginCommands(@"plugins\test\net5.0\TestPlugin.dll"))
+            foreach (var command in LoadPluginCommands(@"plugins\test\net8.0\TestPlugin.dll"))
             {
                 var result = command.Execute();
                 Console.WriteLine(result);
             }
 
-            foreach (var command in LoadPluginCommands(@"plugins\test\net5.0\TestPlugin.dll"))
+            foreach (var command in LoadPluginCommands(@"plugins\test\net8.0\TestPlugin.dll"))
             {
                 var result = command.Execute();
                 Console.WriteLine(result);
