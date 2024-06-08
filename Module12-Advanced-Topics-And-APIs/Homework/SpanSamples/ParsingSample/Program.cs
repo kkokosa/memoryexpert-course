@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using BenchmarkDotNet.Attributes;
 using JetBrains.Profiler.Api;
-using Microsoft.Extensions.Primitives;
 using Console = System.Console;
 
 namespace ConsoleApp2
@@ -13,22 +12,22 @@ namespace ConsoleApp2
     {
         static void Main(string[] args)
         {
-            /*
             string input = "Warsaw: 10.0\rParis: 13.4\rLondon: 8,0";
             var processor = new Processor();
             for (int i = 0; i < 40; ++i)
             {
                 processor.ProcessNormal(input);
+                processor.ProcessSpan(input);
             }
 
             MemoryProfiler.CollectAllocations(true);
             MemoryProfiler.GetSnapshot("Snapshot #0");
             processor.ProcessNormal(input);
             MemoryProfiler.GetSnapshot("Snapshot #1");
-            */
-            //var p = new Processor();
-            //p.ProcessSpan("Warsaw: 10.0\rParis: 13.4\rLondon: 8,0");
-            BenchmarkDotNet.Running.BenchmarkRunner.Run<Benchmarks>();
+            processor.ProcessSpan(input);
+            MemoryProfiler.GetSnapshot("Snapshot #2");
+
+            //BenchmarkDotNet.Running.BenchmarkRunner.Run<Benchmarks>();
         }
     }
 
@@ -72,9 +71,15 @@ namespace ConsoleApp2
         {
             var inputSpan = input.AsSpan();
             foreach (var lineSpan in inputSpan.EnumerateLines())
-            { 
+            {
+                //foreach (var matchSpan in s_regex.EnumerateMatches(lineSpan))
+                //{
+                //    matchSpan.Groups[1].Value;
+                //}
                 Span<Range> ranges = stackalloc Range[2];
-                lineSpan.Split(ranges, ':');
+                var rangesCount = lineSpan.Split(ranges, ':');
+                Debug.Assert(rangesCount == 2);
+
                 var city = lineSpan[ranges[0]];
                 var temperature = lineSpan[ranges[1]];
 
