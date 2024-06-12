@@ -1,9 +1,12 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 using Spectre.Console;
 
@@ -23,7 +26,29 @@ namespace GenerationalApp
                     var mainTask = ctx.AddTask("[green]Processing books [/]");
                     while (true)
                     {
-                        HttpResponseMessage response = await client.GetAsync(url);
+                        string cacheFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
+                            "_cache",
+                            Convert.ToBase64String(Encoding.UTF8.GetBytes(url)).Replace("/", "_") + ".json");
+                        HttpResponseMessage response;
+                        if (File.Exists(cacheFilePath))
+                        {
+                            var cachedContent = await File.ReadAllTextAsync(cacheFilePath);
+                            response = new HttpResponseMessage(HttpStatusCode.OK)
+                            {
+                                Content = new StringContent(cachedContent, Encoding.UTF8, "application/json")
+                            };
+                        }
+                        else
+                        {
+                            response = await client.GetAsync(url);
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var content = await response.Content.ReadAsStringAsync();
+                                Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "_cache"));
+                                await File.WriteAllTextAsync(cacheFilePath, content);
+                            }
+                        }
+
                         if (!response.IsSuccessStatusCode)
                             break;
                         var page = await response.Content.ReadFromJsonAsync<ResultsPage>();
@@ -41,7 +66,21 @@ namespace GenerationalApp
                             {
                                 try
                                 {
-                                    var result = await client.GetStringAsync(bookUrl);
+                                    string bookCacheFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
+                                        "_cache", 
+                                        Convert.ToBase64String(Encoding.UTF8.GetBytes(bookUrl)).Replace("/", "_") + ".txt");
+                                    string result;
+                                    if (File.Exists(bookCacheFilePath))
+                                    {
+                                        result = await File.ReadAllTextAsync(bookCacheFilePath);
+                                    }
+                                    else
+                                    {
+                                        result = await client.GetStringAsync(bookUrl);
+                                        Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "_cache"));
+                                        await File.WriteAllTextAsync(bookCacheFilePath, result);
+                                    }
+
                                     var words = result.Split(new[] { ' ', '\r', '\n' },
                                         StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                                     foreach (var word in words)
@@ -75,15 +114,13 @@ namespace GenerationalApp
                 });
            }
 
-        private static char[] trimChars = new char[] { '.', ',', ';', '!', '?', '"', ':', '(', ')', '_', '[', ']' };
         private static bool TryNormalize(string word, out string result)
         {
             result = word.ToLowerInvariant()
-                .Trim(trimChars);
-            foreach (var c in result)
+                .Trim('.', ',', ';', '!', '?', '"', ':', '(', ')', '_', '[', ']');
+            if (result.Any(c => !char.IsLetter(c)))
             {
-                if (!char.IsLetter(c))
-                    return false;
+                return false;
             }
             return true;
         }
